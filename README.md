@@ -17,5 +17,5 @@ la reçoit par texto avec un lien Instacart, choisit le magasin, voit le prix et
 | Fiches des boutiques | [docs/STORES.md](docs/STORES.md) |
 
 ```bash
-./scripts/setup.sh     # installe tout et lance les 169 tests
+./scripts/setup.sh     # installe tout et lance les 171 tests
 ```

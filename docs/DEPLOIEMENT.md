@@ -219,8 +219,8 @@ du serveur est stable ; une erreur couperait l'appli du serveur jusqu'à la proc
 ## 8. Tests automatisés
 
 ```bash
-npm run typecheck && npm test               # appli : 107 tests, dont un test de bout en bout appli ↔ serveur
-cd server && npm run typecheck && npm test  # serveur : 62 tests (API, chiffrement, Instacart, Twilio, analyse)
+npm run typecheck && npm test               # appli : 110 tests, dont un test de bout en bout appli ↔ serveur
+cd server && npm run typecheck && npm test  # serveur : 61 tests (API, chiffrement, Instacart, Twilio, analyse)
 ```
 La CI GitHub (`.github/workflows/ci.yml`) les lance à chaque modification, avec la
 construction de l'image Docker.
