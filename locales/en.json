@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "Vocourse",
+  "NSMicrophoneUsageDescription": "Vocourse listens to your grocery list when you tap the big green button.",
+  "NSSpeechRecognitionUsageDescription": "Vocourse turns your voice into text to write down your grocery list."
+}

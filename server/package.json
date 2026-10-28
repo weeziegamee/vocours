@@ -1,0 +1,21 @@
+{
+  "name": "vocourse-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serveur Vocourse : comptes, analyse des dictées, transmission Instacart et textos à l'aidant.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/main.ts",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/main.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "keys": "node src/tools/generateKeys.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "^5.9.0"
+  }
+}

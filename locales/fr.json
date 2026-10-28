@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "Vocourse",
+  "NSMicrophoneUsageDescription": "Vocourse écoute votre liste d’épicerie quand vous touchez le gros bouton vert.",
+  "NSSpeechRecognitionUsageDescription": "Vocourse transforme votre voix en texte pour écrire votre liste d’épicerie."
+}
