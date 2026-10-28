@@ -27,6 +27,18 @@ texto » est toujours 123456** et le lien Instacart est fictif.
 Simulateur sans micro : `VOCOURSE_SIMULATED_SPEECH=true npm start` rejoue des phrases
 préenregistrées (« Euh deux cartons de lait 2 % pis une douzaine d’œufs »…).
 
+## 2 bis. Essayer dans un émulateur en ligne (sans Android Studio)
+
+Le profil `demo` produit un APK autonome : mode démonstration, voix simulée (pas de micro
+nécessaire), aucun ordinateur ni serveur à garder allumé.
+
+```bash
+npx eas build --profile demo --platform android   # télécharger l'APK à la fin
+```
+Déposer l'APK sur un émulateur en ligne (par exemple appetize.io : *Upload* → ouvrir le lien
+dans le navigateur). Le bouton vert rejoue des phrases préenregistrées ; le code est 123456.
+Le même APK s'installe aussi tel quel sur un vrai téléphone Android.
+
 ## 3. Avec le serveur local
 
 ```bash
