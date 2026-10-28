@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 /**
  * Appelle `onTimeout` après `ms` sans activité. Brancher `reset` sur
@@ -6,7 +6,9 @@ import { useCallback, useEffect, useRef } from 'react';
  */
 export const useInactivityTimeout = (onTimeout: () => void, ms: number): (() => void) => {
   const cb = useRef(onTimeout);
-  cb.current = onTimeout;
+  useLayoutEffect(() => {
+    cb.current = onTimeout;
+  }, [onTimeout]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reset = useCallback(() => {

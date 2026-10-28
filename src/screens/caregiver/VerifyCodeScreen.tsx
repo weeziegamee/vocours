@@ -55,7 +55,7 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({ purpose, bac
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'sending' });
   const [lastSentAt, setLastSentAt] = useState(0);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(Date.now);
   const mounted = useRef(true);
   const resetInactivity = useInactivityTimeout(onSkip, INACTIVITY_MS);
 
@@ -68,12 +68,9 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({ purpose, bac
     };
   }, []);
 
-  const send = useCallback(async () => {
-    setStatus({ kind: 'sending' });
-    setCode('');
-    setLastSentAt(Date.now());
-    const r = await backend.startVerification(purpose);
+  const handleSent = useCallback((r: Awaited<ReturnType<typeof backend.startVerification>>, sentAt: number) => {
     if (!mounted.current) return;
+    setLastSentAt(sentAt);
     if (r.ok) {
       setStatus({ kind: 'sent', sentTo: r.value.sentTo });
       AccessibilityInfo.announceForAccessibility(V.sent(r.value.sentTo));
@@ -82,10 +79,20 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({ purpose, bac
       setStatus({ kind: 'error', ...e });
       AccessibilityInfo.announceForAccessibility(e.text);
     }
-  }, [backend, purpose, S, V]);
+  }, [backend, S, V]);
+
+  const send = useCallback(() => {
+    const sentAt = Date.now();
+    return backend.startVerification(purpose).then((r) => handleSent(r, sentAt));
+  }, [backend, purpose, handleSent]);
 
   useEffect(() => {
-    void send();
+    let active = true;
+    const sentAt = Date.now();
+    void backend.startVerification(purpose).then((r) => {
+      if (active) handleSent(r, sentAt);
+    });
+    return () => { active = false; };
     // Un seul envoi à l'arrivée sur l'écran.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -152,7 +159,11 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({ purpose, bac
             label={cooldownLeft > 0 ? `${V.resend} (${Math.ceil(cooldownLeft / 1000)} s)` : V.resend}
             variant="secondary"
             disabled={busy || cooldownLeft > 0 || (status.kind === 'error' && !status.canResend)}
-            onPress={() => void send()}
+            onPress={() => {
+              setStatus({ kind: 'sending' });
+              setCode('');
+              void send();
+            }}
           />
           <BigButton label={skipLabel} variant="secondary" accessibilityHint={skipHint} onPress={onSkip} />
         </ScrollView>

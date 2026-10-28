@@ -4,7 +4,7 @@
  * changement, jamais avant d'avoir relu la liste gardée (pour ne pas l'écraser).
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 import type {
   AppLocale,
@@ -45,7 +45,9 @@ export const useShoppingList = (userId: UserId, store: SecureStorePort, locale: 
   const [list, dispatch] = useReducer(listReducer, undefined, () => createEmptyList(newListId(), userId, nowIso(), locale));
   const [hydrated, setHydrated] = useState(false);
   const localeRef = useRef(locale);
-  localeRef.current = locale;
+  useLayoutEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
 
   useEffect(() => {
     let active = true;

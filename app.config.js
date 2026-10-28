@@ -9,6 +9,7 @@
  *   EAS_PROJECT_ID     identifiant du projet EAS (eas init)
  *   VOCOURSE_TLS_HOST / VOCOURSE_TLS_PINS   épinglage du certificat (facultatif, voir plugin)
  */
+/* global __dirname */
 const fs = require('fs');
 const path = require('path');
 

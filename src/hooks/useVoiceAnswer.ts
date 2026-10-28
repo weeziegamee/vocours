@@ -3,7 +3,7 @@
  * « Mon panier ». Le texte est reconnu et interprété sur le téléphone, sans serveur.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { AppLocale, SpeechPort, VoiceIntent } from '../types/vocourse';
 import { parseVoiceIntent } from '../services/voice/intents';
@@ -24,7 +24,9 @@ export const useVoiceAnswer = (
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState('');
   const cb = useRef(onIntent);
-  cb.current = onIntent;
+  useLayoutEffect(() => {
+    cb.current = onIntent;
+  }, [onIntent]);
   const mounted = useRef(true);
   useEffect(
     () => () => {

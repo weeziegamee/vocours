@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 /** Vrai si « Réduire les animations » est actif. */
@@ -25,7 +25,9 @@ export const useReduceMotion = (): boolean => {
 export const useScreenReader = (onChange?: (enabled: boolean) => void): boolean => {
   const [enabled, setEnabled] = useState(false);
   const cb = useRef(onChange);
-  cb.current = onChange;
+  useLayoutEffect(() => {
+    cb.current = onChange;
+  }, [onChange]);
   useEffect(() => {
     let mounted = true;
     const update = (v: boolean): void => {

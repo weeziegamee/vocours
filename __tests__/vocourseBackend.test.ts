@@ -25,7 +25,7 @@ interface Call {
   readonly init: RequestInit;
 }
 
-const fakeFetch = (responses: ReadonlyArray<() => Promise<Response>>) => {
+const fakeFetch = (responses: readonly (() => Promise<Response>)[]) => {
   const calls: Call[] = [];
   let i = 0;
   const impl = (async (url: string, init: RequestInit) => {

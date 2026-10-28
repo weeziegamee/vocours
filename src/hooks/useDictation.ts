@@ -6,7 +6,7 @@
  * dans l'ordre, sans doublon (clé d'idempotence = identifiant de la prise).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type {
   AppLocale,
@@ -95,7 +95,9 @@ export const useDictation = (o: DictationOptions): DictationApi => {
 
   // Dernières valeurs, lues par les rappels asynchrones.
   const latest = useRef(o);
-  latest.current = o;
+  useLayoutEffect(() => {
+    latest.current = o;
+  }, [o]);
 
   const persistQueue = useCallback(() => {
     void saveQueue(latest.current.store, queue.current).catch(() => undefined);

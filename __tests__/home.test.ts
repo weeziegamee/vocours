@@ -19,7 +19,7 @@ const ratio = (a: string, b: string): number => {
 
 describe('Palette WCAG AAA', () => {
   it('donne au moins 7:1 à tout texte sur ses fonds', () => {
-    const textPairs: ReadonlyArray<readonly [string, string]> = [
+    const textPairs: readonly (readonly [string, string])[] = [
       [colors.text, colors.background],
       [colors.text, colors.surface],
       [colors.textSecondary, colors.background],

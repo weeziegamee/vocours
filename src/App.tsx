@@ -16,7 +16,7 @@
  * simulés selon `env.mode`.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Linking, Share, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -107,7 +107,7 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
   const [onboardingBusy, setOnboardingBusy] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [caregiverStatus, setCaregiverStatus] = useState<CaregiverStatus | null>(null);
-  const [retailers, setRetailers] = useState<RetailersState>({ kind: 'need_address' });
+  const [retailers, setRetailers] = useState<RetailersState>({ kind: 'loading' });
 
   const locale: AppLocale = settings?.language ?? setup?.locale ?? chosenLocale ?? 'fr-CA';
   const register = settings?.register ?? 'vous';
@@ -188,7 +188,9 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
    * de relecture ou d'envoi.
    */
   const routeRef = useRef(route);
-  routeRef.current = route;
+  useLayoutEffect(() => {
+    routeRef.current = route;
+  }, [route]);
   const heldResults = useRef<InterpretResponse[]>([]);
 
   const applyInterpretation = useCallback(
@@ -280,16 +282,18 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
     void speaker.say(currentDoubt.disambiguation.ttsPrompt);
   }, [currentDoubt, route.name, speaker]);
 
-  onAnswerDisambiguation.current = (itemId, answer) => {
-    const item = list.items.find((i) => i.itemId === itemId);
-    shopping.resolveDoubt(itemId, answer);
-    if (answer.kind === 'none_matched') {
-      void speaker.say(S.voice.redictate).then(() => dictation.startListening());
-      return;
-    }
-    const chosen = item && isPendingChoice(item) ? item.disambiguation.candidates.find((c) => c.rank === answer.rank) : undefined;
-    if (chosen) void speaker.say(S.voice.doubtResolved(chosen.label));
-  };
+  useLayoutEffect(() => {
+    onAnswerDisambiguation.current = (itemId, answer) => {
+      const item = list.items.find((i) => i.itemId === itemId);
+      shopping.resolveDoubt(itemId, answer);
+      if (answer.kind === 'none_matched') {
+        void speaker.say(S.voice.redictate).then(() => dictation.startListening());
+        return;
+      }
+      const chosen = item && isPendingChoice(item) ? item.disambiguation.candidates.find((c) => c.rank === answer.rank) : undefined;
+      if (chosen) void speaker.say(S.voice.doubtResolved(chosen.label));
+    };
+  }, [list.items, shopping, speaker, S, dictation]);
   const answerDoubt = useCallback((itemId: ItemId, answer: DisambiguationAnswer) => onAnswerDisambiguation.current(itemId, answer), []);
 
   const onRemoveItem = useCallback(
@@ -354,7 +358,6 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
   }, [backend]);
 
   const loadRetailers = useCallback(async () => {
-    setRetailers({ kind: 'loading' });
     const r = await backend.nearbyRetailers();
     setRetailers(r.ok ? { kind: 'ok', list: r.value } : r.error.code === 'setup_incomplete' ? { kind: 'need_address' } : { kind: 'failed' });
   }, [backend]);
@@ -362,13 +365,16 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
   /* À l'ouverture des réglages : état du cellulaire et épiceries proches. */
   useEffect(() => {
     if (route.name !== 'caregiver_settings' && route.name !== 'setup_settings') return;
-    if (!settings) {
-      setRetailers({ kind: 'need_address' });
-      return;
-    }
-    void refreshCaregiverStatus();
-    void loadRetailers();
-  }, [route.name, settings, refreshCaregiverStatus, loadRetailers]);
+    if (!settings) return;
+    let active = true;
+    void backend.caregiverStatus().then((r) => {
+      if (active && r.ok) setCaregiverStatus(r.value);
+    });
+    void backend.nearbyRetailers().then((r) => {
+      if (active) setRetailers(r.ok ? { kind: 'ok', list: r.value } : r.error.code === 'setup_incomplete' ? { kind: 'need_address' } : { kind: 'failed' });
+    });
+    return () => { active = false; };
+  }, [route.name, settings, backend]);
 
   const onCaregiverAccess = useCallback(() => {
     speaker.stop();
@@ -577,7 +583,7 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
             initial={settings}
             defaultLanguage={locale}
             status={caregiverStatus}
-            retailers={retailers}
+            retailers={settings ? retailers : { kind: 'need_address' }}
             onSave={async (next) => {
               const r = await saveCaregiverSettings(next);
               if (r.ok) {
@@ -593,7 +599,10 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
             onOpenPrivacy={openPrivacy}
             onExport={async () => ({ ok: true, value: undefined })}
             onDelete={async () => ({ ok: true, value: undefined })}
-            onReloadRetailers={() => void loadRetailers()}
+            onReloadRetailers={() => {
+              setRetailers({ kind: 'loading' });
+              void loadRetailers();
+            }}
             cloudSpeech={setup?.consent.cloudSpeech ?? false}
             platform={platform}
             onCloudSpeechChange={async () => ({ ok: true, value: undefined })}
@@ -662,7 +671,7 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
             initial={settings}
             defaultLanguage={locale}
             status={caregiverStatus}
-            retailers={retailers}
+            retailers={settings ? retailers : { kind: 'need_address' }}
             onSave={saveCaregiverSettings}
             onClose={closeCaregiverArea}
             onChangePin={() => setRoute({ name: 'caregiver_pin', purpose: 'change' })}
@@ -670,7 +679,10 @@ const Root: React.FC<AppProps> = ({ env = RUNTIME_ENV, services: injected }) => 
             onOpenPrivacy={openPrivacy}
             onExport={exportAccount}
             onDelete={deleteAccount}
-            onReloadRetailers={() => void loadRetailers()}
+            onReloadRetailers={() => {
+              setRetailers({ kind: 'loading' });
+              void loadRetailers();
+            }}
             cloudSpeech={setup?.consent.cloudSpeech ?? false}
             platform={platform}
             onCloudSpeechChange={changeCloudSpeech}

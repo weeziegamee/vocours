@@ -50,11 +50,16 @@ export const LongPressConfirmButton: React.FC<LongPressConfirmButtonProps> = ({
   onConfirmed,
 }) => {
   const S = useStrings();
-  const progress = useRef(new Animated.Value(0)).current;
+  const [progress] = useState(() => new Animated.Value(0));
   const animation = useRef<Animated.CompositeAnimation | null>(null);
   const startedAt = useRef<number | null>(null);
   const confirmed = useRef(false);
   const [holding, setHolding] = useState(false);
+  const [previousEnabled, setPreviousEnabled] = useState(enabled);
+  if (previousEnabled !== enabled) {
+    setPreviousEnabled(enabled);
+    setHolding(false);
+  }
 
   const reset = useCallback(() => {
     animation.current?.stop();
@@ -73,9 +78,12 @@ export const LongPressConfirmButton: React.FC<LongPressConfirmButtonProps> = ({
   useEffect(() => {
     if (!enabled) {
       confirmed.current = false;
-      reset();
+      animation.current?.stop();
+      animation.current = null;
+      startedAt.current = null;
+      progress.setValue(0);
     }
-  }, [enabled, reset]);
+  }, [enabled, progress]);
 
   const handlePressIn = (): void => {
     if (!enabled || confirmed.current) return;

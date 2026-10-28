@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 import type { SpeakOptions, TtsPort } from '../types/vocourse';
@@ -26,30 +26,34 @@ export const useSpeaker = (tts: TtsPort): Speaker => {
   }, [screenReaderEnabled]);
   const last = useRef<{ text: string; options?: SpeakOptions } | null>(null);
 
-  const queue = useMemo(
-    () =>
-      createSpeechQueue<SpeakOptions>(
-        async (text, options) => {
-          last.current = options ? { text, options } : { text };
-          if (srRef.current) {
-            AccessibilityInfo.announceForAccessibility(text);
-            return 'completed';
-          }
-          return tts.speak(text, options);
-        },
-        () => tts.stop(),
-      ),
-    [tts],
-  );
+  const speak = useCallback(async (text: string, options?: SpeakOptions): Promise<SpeakOutcome> => {
+    last.current = options ? { text, options } : { text };
+    if (srRef.current) {
+      AccessibilityInfo.announceForAccessibility(text);
+      return 'completed';
+    }
+    return tts.speak(text, options);
+  }, [tts]);
 
-  const say = useCallback((text: string, options?: SpeakOptions) => queue.enqueue(text, options), [queue]);
-  const stop = useCallback(() => queue.cancel(), [queue]);
+  const queue = useRef<ReturnType<typeof createSpeechQueue<SpeakOptions>> | null>(null);
+  useLayoutEffect(() => {
+    const activeQueue = createSpeechQueue<SpeakOptions>(speak, () => tts.stop());
+    queue.current = activeQueue;
+    return () => {
+      activeQueue.cancel();
+      queue.current = null;
+    };
+  }, [speak, tts]);
+
+  const say = useCallback((text: string, options?: SpeakOptions) =>
+    queue.current?.enqueue(text, options) ?? Promise.resolve<SpeakOutcome>('interrupted'), []);
+  const stop = useCallback(() => queue.current?.cancel(), []);
   const repeat = useCallback(() => {
     const l = last.current;
     if (!l) return;
-    queue.cancel();
-    void queue.enqueue(l.text, l.options);
-  }, [queue]);
+    queue.current?.cancel();
+    void queue.current?.enqueue(l.text, l.options);
+  }, []);
 
   return useMemo(() => ({ say, repeat, stop, screenReaderEnabled }), [say, repeat, stop, screenReaderEnabled]);
 };

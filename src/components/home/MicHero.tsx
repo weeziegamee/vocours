@@ -8,7 +8,7 @@
  *   par le lecteur d'écran, et la transcription en direct pendant l'écoute.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
 import type { MicState } from '../../types/vocourse';
@@ -39,7 +39,7 @@ export interface MicHeroProps {
 }
 
 const Waves: React.FC<{ readonly active: boolean; readonly reduceMotion: boolean }> = ({ active, reduceMotion }) => {
-  const values = useRef(WAVES.map(() => new Animated.Value(0))).current;
+  const [values] = useState(() => WAVES.map(() => new Animated.Value(0)));
 
   useEffect(() => {
     if (!active || reduceMotion) {

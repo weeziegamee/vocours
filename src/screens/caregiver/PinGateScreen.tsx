@@ -91,13 +91,12 @@ export const PinGateScreen: React.FC<PinGateScreenProps> = ({
     setCount(0);
   }, []);
 
-  const loadStatus = useCallback(async () => {
+  const applyStatus = useCallback((st: Awaited<ReturnType<PinVault['status']>>) => {
     if (purpose === 'change' || purpose === 'reset' || purpose === 'create') {
       setFlow('create_first');
       setMessage({ text: purpose === 'create' ? P.firstAccessIntro : P.newCodeIntro, tone: 'info' });
       return;
     }
-    const st = await vault.status();
     if (st.state === 'locked') {
       setLockedUntil(st.lockedUntil);
       setFlow('locked');
@@ -109,15 +108,19 @@ export const PinGateScreen: React.FC<PinGateScreenProps> = ({
       setFlow('verify');
       setMessage(null);
     }
-  }, [purpose, vault, P]);
+  }, [purpose, P]);
+
+  const loadStatus = useCallback(() => vault.status().then(applyStatus), [vault, applyStatus]);
 
   useEffect(() => {
-    void loadStatus();
+    let active = true;
+    void vault.status().then((st) => { if (active) applyStatus(st); });
     return () => {
+      active = false;
       digits.current = '';
       firstPin.current = null;
     };
-  }, [loadStatus]);
+  }, [vault, applyStatus]);
 
   /* Compte à rebours du blocage. */
   useEffect(() => {

@@ -31,7 +31,6 @@ export interface Services {
 
 const devLog = (tag: string) => (msg: unknown, data?: unknown): void => {
   if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    // eslint-disable-next-line no-console
     console.log(`[Vocourse ${tag}]`, msg, data ?? '');
   }
 };
